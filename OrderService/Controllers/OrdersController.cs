@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderService.Data;
+using OrderService.DTOs;
 using OrderService.Models;
+using OrderService.Services.Catalog;
 
 namespace OrderService.Controllers
 {
@@ -15,10 +17,13 @@ namespace OrderService.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly OrderServiceContext _context;
-
-        public OrdersController(OrderServiceContext context)
+        private readonly IBookCatalogClient _clint;
+        private readonly ILogger<OrdersController> _log;
+        public OrdersController(OrderServiceContext context,IBookCatalogClient client, ILogger<OrdersController> log)
         {
             _context = context;
+            _clint = client;
+            _log = log;
         }
 
         // GET: api/Orders
@@ -76,12 +81,38 @@ namespace OrderService.Controllers
         // POST: api/Orders
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Order>> PostOrder(Order order)
+        public async Task<ActionResult<Order>> PostOrder(CreateOrderDTO order)
         {
-            _context.Order.Add(order);
+            if (order.Quantity <= 0)
+            {
+                return BadRequest("Quantity must be greater than zero.");
+            }
+            var book = await _clint.GetBookAsync(order.BookId);
+
+            // 1) Validate book exists + get current price & stock
+            if (book is null)
+                return Problem(statusCode: 400, title: $"Book {order.BookId} not found.");
+
+            // 2) Validate stock availability
+            if (order.Quantity > book.Stock)
+                return Problem(statusCode: 409, title: "Insufficient stock.",
+                    detail: $"Requested {order.Quantity}, available {book.Stock}.");
+
+            // 3) Compute total price server-side
+            var totalPrice = book.Price * order.Quantity;
+
+            var newOrder = new Order
+            {
+                CustomerId = order.CustomerId,
+                BookId = order.BookId,
+                Quantity = order.Quantity,
+                TotalPrice = totalPrice,
+                Status = "Pending"
+            };
+            _context.Order.Add(newOrder);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetOrder", new { id = order.Id }, order);
+            return CreatedAtAction("GetOrder", new { id = newOrder.Id }, newOrder);
         }
 
         // DELETE: api/Orders/5

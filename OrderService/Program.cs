@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrderService.Data;
+using OrderService.Services.Catalog;
 
 namespace OrderService
 {
@@ -18,6 +19,13 @@ namespace OrderService
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            var bookCatalogUrl = builder.Configuration["ServiceUrls:Catalog"]
+                ?? throw new InvalidOperationException("Book Catalog Url not found.");
+            builder.Services.AddHttpClient<IBookCatalogClient, BookCatalogClient>(client =>
+            {
+                client.BaseAddress = new Uri(bookCatalogUrl);
+                client.Timeout = TimeSpan.FromSeconds(5);
+            });
 
             var app = builder.Build();
 
