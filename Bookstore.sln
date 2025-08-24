@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService", "OrderServic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "APIGateway", "APIGateway\APIGateway.csproj", "{ADB4AF40-27F1-4C05-800C-8A41E8579D52}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PaymentService", "PaymentService\PaymentService.csproj", "{D3C524F1-DB4E-437D-9845-5321556C4F80}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{ADB4AF40-27F1-4C05-800C-8A41E8579D52}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ADB4AF40-27F1-4C05-800C-8A41E8579D52}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ADB4AF40-27F1-4C05-800C-8A41E8579D52}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3C524F1-DB4E-437D-9845-5321556C4F80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3C524F1-DB4E-437D-9845-5321556C4F80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3C524F1-DB4E-437D-9845-5321556C4F80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3C524F1-DB4E-437D-9845-5321556C4F80}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
