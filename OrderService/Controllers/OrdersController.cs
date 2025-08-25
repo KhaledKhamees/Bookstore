@@ -5,10 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OrderService.Contracts;
 using OrderService.Data;
 using OrderService.DTOs;
 using OrderService.Models;
 using OrderService.Services.Catalog;
+using OrderService.Contracts;
+using OrderService.Services.RabbitMQ;
 
 namespace OrderService.Controllers
 {
@@ -109,8 +112,20 @@ namespace OrderService.Controllers
                 TotalPrice = totalPrice,
                 Status = "Pending"
             };
+            var OrderEvent = new OrderPlacedEvent()
+            {
+                OrderId = newOrder.Id,
+                CustomerId = newOrder.CustomerId,
+                TotalPrice = newOrder.TotalPrice,
+                Items = new List<OrderItemDTO> { new OrderItemDTO(newOrder.BookId, newOrder.Quantity, book.Price) },
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
             _context.Order.Add(newOrder);
             await _context.SaveChangesAsync();
+
+            var Producer = new RabbitMQProducer();
+            Producer.SendProductMessage("OrderQueue", OrderEvent);
 
             return CreatedAtAction("GetOrder", new { id = newOrder.Id }, newOrder);
         }

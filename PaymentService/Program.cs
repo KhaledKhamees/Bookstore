@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using PaymentService.Consumers;
 using PaymentService.Data;
 
 namespace PaymentService
@@ -19,6 +20,8 @@ namespace PaymentService
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddHostedService<OrderPlacedConsumer>();
+
 
             var app = builder.Build();
 
@@ -32,8 +35,7 @@ namespace PaymentService
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
-
+            app.MapGet("/", () => "Payment Service Running...");
             app.MapControllers();
 
             app.Run();
