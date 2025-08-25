@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using CatalogService.Data;
+using CatalogService.Consumers;
 
 namespace CatalogService
 {
@@ -9,6 +10,7 @@ namespace CatalogService
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddHostedService<PaymentProcessedConsumer>();
             builder.Services.AddDbContext<CatalogServiceContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("CatalogServiceContext") ?? throw new InvalidOperationException("Connection string 'CatalogServiceContext' not found.")));
 
@@ -18,6 +20,7 @@ namespace CatalogService
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
 
             var app = builder.Build();
 

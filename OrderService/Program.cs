@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using OrderService.Data;
 using OrderService.Services.Catalog;
+using OrderService.Services.RabbitMQ;
 
 namespace OrderService
 {
@@ -26,6 +27,7 @@ namespace OrderService
                 client.BaseAddress = new Uri(bookCatalogUrl);
                 client.Timeout = TimeSpan.FromSeconds(5);
             });
+            builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
 
             var app = builder.Build();
 

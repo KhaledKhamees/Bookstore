@@ -22,11 +22,14 @@ namespace OrderService.Controllers
         private readonly OrderServiceContext _context;
         private readonly IBookCatalogClient _clint;
         private readonly ILogger<OrdersController> _log;
-        public OrdersController(OrderServiceContext context,IBookCatalogClient client, ILogger<OrdersController> log)
+        private readonly IRabbitMQProducer _rabbitMQProducer;
+
+        public OrdersController(OrderServiceContext context,IBookCatalogClient client, ILogger<OrdersController> log, IRabbitMQProducer rabbitMQProducer)
         {
             _context = context;
             _clint = client;
             _log = log;
+            _rabbitMQProducer = rabbitMQProducer;
         }
 
         // GET: api/Orders
@@ -124,8 +127,7 @@ namespace OrderService.Controllers
             _context.Order.Add(newOrder);
             await _context.SaveChangesAsync();
 
-            var Producer = new RabbitMQProducer();
-            Producer.SendProductMessage("OrderQueue", OrderEvent);
+            _rabbitMQProducer.SendProductMessage("OrderQueue", OrderEvent);
 
             return CreatedAtAction("GetOrder", new { id = newOrder.Id }, newOrder);
         }
