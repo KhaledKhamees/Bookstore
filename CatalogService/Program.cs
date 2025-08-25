@@ -20,7 +20,8 @@ namespace CatalogService
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-
+            builder.Services.AddDbContextFactory<CatalogServiceContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("CatalogServiceContext")));
 
             var app = builder.Build();
 
