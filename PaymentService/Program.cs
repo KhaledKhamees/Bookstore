@@ -21,7 +21,8 @@ namespace PaymentService
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHostedService<OrderPlacedConsumer>();
-
+            builder.Services.AddDbContextFactory<PaymentServiceContext>(options =>
+                    options.UseSqlServer(builder.Configuration.GetConnectionString("PaymentServiceContext")));
 
             var app = builder.Build();
 

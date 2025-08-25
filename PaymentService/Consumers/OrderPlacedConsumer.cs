@@ -13,6 +13,7 @@ namespace PaymentService.Consumers
     public class OrderPlacedConsumer : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
+        private readonly IConfiguration _configuration;
 
         public OrderPlacedConsumer(IServiceProvider serviceProvider)
         {
@@ -21,7 +22,13 @@ namespace PaymentService.Consumers
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var factory = new ConnectionFactory { HostName = "localhost" };
+            var factory = new ConnectionFactory()
+            {
+                HostName = _configuration["RabbitMQ:HostName"],
+                Port = int.Parse(_configuration["RabbitMQ:Port"]),
+                UserName = _configuration["RabbitMQ:UserName"],
+                Password = _configuration["RabbitMQ:Password"]
+            };
             var connection = await factory.CreateConnectionAsync();
             var channel = await connection.CreateChannelAsync();
 
