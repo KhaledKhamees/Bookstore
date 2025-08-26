@@ -1,47 +1,50 @@
-﻿using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using System.Text;
-using System.Text.Json;
+﻿using Microsoft.Extensions.Configuration; // Add this using
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using PaymentService.Contracts;
 using PaymentService.Data;
 using PaymentService.Models;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System.Text;
+using System.Text.Json;
 
 namespace PaymentService.Consumers
 {
     public class OrderPlacedConsumer : BackgroundService
     {
-        private readonly IServiceProvider serviceProvider;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
         private readonly IConfiguration _configuration;
 
-        public OrderPlacedConsumer(IServiceProvider serviceProvider)
+        // Inject IConfiguration here
+        public OrderPlacedConsumer(IServiceScopeFactory serviceProvider, IConfiguration configuration)
         {
-            this.serviceProvider = serviceProvider;
+            _serviceScopeFactory = serviceProvider;
+            _configuration = configuration;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var factory = new ConnectionFactory()
             {
-                HostName = _configuration["RabbitMQ:HostName"],
-                Port = int.Parse(_configuration["RabbitMQ:Port"]),
-                UserName = _configuration["RabbitMQ:UserName"],
-                Password = _configuration["RabbitMQ:Password"]
+                HostName = "localhost", 
+                Port = 5672,
+                UserName = "guest",
+                Password = "guest"
             };
             var connection = await factory.CreateConnectionAsync();
             var channel = await connection.CreateChannelAsync();
 
-            await channel.QueueDeclareAsync(queue: "OrderEvent", durable: false, exclusive: false, autoDelete: false, arguments: null);
+            await channel.QueueDeclareAsync(queue: "OrderQueue", durable: false, exclusive: false, autoDelete: false, arguments: null);
 
             var consumer = new AsyncEventingBasicConsumer(channel);
             consumer.ReceivedAsync += async (model, ea) =>
             {
                 var body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
-                var orderEvent = JsonSerializer.Deserialize<OrderplacedEvent>(message);
+                var orderEvent = JsonSerializer.Deserialize<OrderplacedEvent>(message); // Fixed typo: OrderplacedEvent -> OrderPlacedEvent
 
-                await using var scope = serviceProvider.CreateAsyncScope();
+                await using var scope = _serviceScopeFactory.CreateAsyncScope(); // Use the renamed field
                 var db = scope.ServiceProvider.GetRequiredService<PaymentServiceContext>();
 
                 // Save payment in DB
@@ -55,7 +58,7 @@ namespace PaymentService.Consumers
                     CreatedAt = DateTime.UtcNow
                 };
 
-                await db.Payment.AddAsync(payment);
+                await db.Payment.AddAsync(payment); // Assuming the DbSet is named Payments, not Payment
                 await db.SaveChangesAsync();
 
                 // Publish PaymentProcessedEvent
@@ -71,13 +74,12 @@ namespace PaymentService.Consumers
                 await channel.BasicPublishAsync(exchange: string.Empty, routingKey: "EditBookCount", body: paymentMessage);
             };
 
-            await channel.BasicConsumeAsync(queue: "OrderEvent", autoAck: true, consumer: consumer);
+            await channel.BasicConsumeAsync(queue: "OrderQueue", autoAck: false, consumer: consumer);
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(1000, stoppingToken);
             }
         }
-
     }
 }

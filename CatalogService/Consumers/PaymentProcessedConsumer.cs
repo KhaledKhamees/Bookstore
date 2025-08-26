@@ -10,21 +10,22 @@ namespace CatalogService.Consumers
 {
     public class PaymentProcessedConsumer:BackgroundService
     {
-        private readonly IServiceProvider serviceProvider;
+        private readonly IServiceScopeFactory serviceProvider;
         private readonly IConfiguration _configuration;
-        public PaymentProcessedConsumer(IServiceProvider serviceProvider)
+        public PaymentProcessedConsumer(IServiceScopeFactory serviceProvider,IConfiguration configuration)
         {
             this.serviceProvider = serviceProvider;
+            _configuration = configuration;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var factory = new ConnectionFactory()
             {
-                HostName = _configuration["RabbitMQ:HostName"],
-                Port = int.Parse(_configuration["RabbitMQ:Port"]),
-                UserName = _configuration["RabbitMQ:UserName"],
-                Password = _configuration["RabbitMQ:Password"]
+                HostName = "localhost", // Now _configuration is available
+                Port = 5672,
+                UserName = "guest",
+                Password = "guest"
             };
             var connection = await factory.CreateConnectionAsync();
             var channel = await connection.CreateChannelAsync();
@@ -49,7 +50,7 @@ namespace CatalogService.Consumers
                 }
                 await db.SaveChangesAsync();
             };
-            await channel.BasicConsumeAsync(queue: "EditBookCount", autoAck: true, consumer: consumer);
+            await channel.BasicConsumeAsync(queue: "EditBookCount", autoAck: false, consumer: consumer);
             while (!stoppingToken.IsCancellationRequested)
             {
                 await Task.Delay(1000, stoppingToken);

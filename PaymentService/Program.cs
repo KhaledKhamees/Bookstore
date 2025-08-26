@@ -21,8 +21,16 @@ namespace PaymentService
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddHostedService<OrderPlacedConsumer>();
-            builder.Services.AddDbContextFactory<PaymentServiceContext>(options =>
-                    options.UseSqlServer(builder.Configuration.GetConnectionString("PaymentServiceContext")));
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
+
 
             var app = builder.Build();
 
@@ -34,6 +42,7 @@ namespace PaymentService
             }
 
             app.UseHttpsRedirection();
+            app.UseCors("AllowAll");
 
             app.UseAuthorization();
             app.MapGet("/", () => "Payment Service Running...");

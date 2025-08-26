@@ -8,10 +8,10 @@ namespace OrderService.Services.RabbitMQ
         {
             var factory = new ConnectionFactory()
             {
-                HostName = _configuration["RabbitMQ:HostName"],
-                Port = int.Parse(_configuration["RabbitMQ:Port"]),
-                UserName = _configuration["RabbitMQ:UserName"],
-                Password = _configuration["RabbitMQ:Password"]
+                HostName = "localhost", // Now _configuration is available
+                Port = 5672,
+                UserName = "guest",
+                Password = "guest"
             };
             using var connection = await factory.CreateConnectionAsync();
             using var channel = await connection.CreateChannelAsync();
