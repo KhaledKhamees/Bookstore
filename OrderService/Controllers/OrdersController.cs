@@ -1,17 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OrderService.Contracts;
 using OrderService.Contracts;
 using OrderService.Data;
 using OrderService.DTOs;
 using OrderService.Models;
 using OrderService.Services.Catalog;
-using OrderService.Contracts;
 using OrderService.Services.RabbitMQ;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace OrderService.Controllers
 {
@@ -31,14 +32,14 @@ namespace OrderService.Controllers
             _log = log;
             _rabbitMQProducer = rabbitMQProducer;
         }
-
+        [Authorize(Roles = "Admin")]
         // GET: api/Orders
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrder()
         {
             return await _context.Order.ToListAsync();
         }
-
+        [Authorize(Roles = "Admin")]
         // GET: api/Orders/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Order>> GetOrder(int id)
@@ -52,7 +53,7 @@ namespace OrderService.Controllers
 
             return order;
         }
-
+        [Authorize(Roles = "Customer")]
         // PUT: api/Orders/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -83,7 +84,7 @@ namespace OrderService.Controllers
 
             return NoContent();
         }
-
+        [Authorize(Roles = "Customer")]
         // POST: api/Orders
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
@@ -131,7 +132,7 @@ namespace OrderService.Controllers
 
             return CreatedAtAction("GetOrder", new { id = newOrder.Id }, newOrder);
         }
-
+        [Authorize(Roles = "Customer")]
         // DELETE: api/Orders/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteOrder(int id)
