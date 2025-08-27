@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using CatalogService.Data;
 using CatalogService.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CatalogService.Controllers
 {
@@ -41,7 +42,7 @@ namespace CatalogService.Controllers
 
             return book;
         }
-
+        [Authorize(Roles = "Admin")]
         // PUT: api/Books/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -72,7 +73,7 @@ namespace CatalogService.Controllers
 
             return NoContent();
         }
-
+        [Authorize(Roles ="Admin")]
         // POST: api/Books
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
@@ -83,7 +84,7 @@ namespace CatalogService.Controllers
 
             return CreatedAtAction("GetBook", new { id = book.Id }, book);
         }
-
+        [Authorize(Roles = "Admin")]
         // DELETE: api/Books/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBook(int id)
