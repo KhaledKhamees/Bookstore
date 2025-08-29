@@ -186,7 +186,7 @@ namespace UserService.Controllers
             var authSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
                 System.Text.Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
 
-            var expiryInMinutes = Convert.ToDouble(_configuration["Jwt:DurationInMinutes    "] ?? "180");
+            var expiryInMinutes = Convert.ToDouble(_configuration["Jwt:DurationInMinutes"] ?? "180");
 
             var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],

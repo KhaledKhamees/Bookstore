@@ -35,6 +35,15 @@ namespace CatalogService
                         IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                     };
                 });
+            builder.Services.AddCors(builder =>
+            {
+                builder.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
 
 
             var app = builder.Build();
@@ -45,7 +54,7 @@ namespace CatalogService
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseCors("AllowAll");
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();

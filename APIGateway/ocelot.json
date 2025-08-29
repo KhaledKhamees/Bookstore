@@ -10,7 +10,29 @@
         }
       ],
       "UpstreamPathTemplate": "/catalog/books",
-      "UpstreamHttpMethod": [ "GET", "POST" ]
+      "UpstreamHttpMethod": [ "GET" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {}
+    },
+    {
+      "DownstreamPathTemplate": "/api/Books",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5231
+        }
+      ],
+      "UpstreamPathTemplate": "/catalog/books",
+      "UpstreamHttpMethod": [ "POST" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": { "role": "Admin" }
     },
     {
       "DownstreamPathTemplate": "/api/Books/{id}",
@@ -22,7 +44,29 @@
         }
       ],
       "UpstreamPathTemplate": "/catalog/books/{id}",
-      "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ]
+      "UpstreamHttpMethod": [ "PUT", "DELETE" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": { "role": "Admin" }
+    },
+    {
+      "DownstreamPathTemplate": "/api/Books/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5231
+        }
+      ],
+      "UpstreamPathTemplate": "/catalog/books/{id}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": {}
     },
     {
       "DownstreamPathTemplate": "/api/Orders",
@@ -34,7 +78,29 @@
         }
       ],
       "UpstreamPathTemplate": "/orders",
-      "UpstreamHttpMethod": [ "GET", "POST" ]
+      "UpstreamHttpMethod": [ "POST" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": { "role": "Customer" }
+    },
+    {
+      "DownstreamPathTemplate": "/api/Orders",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "UpstreamPathTemplate": "/orders",
+      "UpstreamHttpMethod": [ "GET" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": { "role": "Admin" }
     },
     {
       "DownstreamPathTemplate": "/api/Orders/{id}",
@@ -46,10 +112,35 @@
         }
       ],
       "UpstreamPathTemplate": "/orders/{id}",
-      "UpstreamHttpMethod": [ "GET", "PUT", "DELETE" ]
+      "UpstreamHttpMethod": [ "PUT", "DELETE" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": { "role": "Customer" }
+    },
+    {
+      "DownstreamPathTemplate": "/api/Orders/{id}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5001
+        }
+      ],
+      "UpstreamPathTemplate": "/orders/{id}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RouteClaimsRequirement": { "role": "Admin" }
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5017"
+    "BaseUrl": "http://localhost:5017",
+    "DownstreamHeaderTransform": {
+      "Authorization": "{Authorization}"
+    }
   }
 }

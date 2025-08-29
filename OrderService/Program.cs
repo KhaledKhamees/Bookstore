@@ -54,7 +54,7 @@ namespace OrderService
             }
 
             app.UseHttpsRedirection();
-
+            app.UseAuthentication();
             app.UseAuthorization();
 
 

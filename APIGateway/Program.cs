@@ -1,7 +1,8 @@
-
+﻿using Microsoft.IdentityModel.Tokens;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
-using System.Threading.Tasks;
+using System.Security.Claims;
+using System.Text;
 
 namespace APIGateway
 {
@@ -11,10 +12,7 @@ namespace APIGateway
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
@@ -22,15 +20,37 @@ namespace APIGateway
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAllOrigins",
-                    builder => builder.AllowAnyOrigin()
-                                      .AllowAnyMethod()
-                                      .AllowAnyHeader());
+                options.AddPolicy("AllowAll",
+                    b => b.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader());
+            });
+
+            
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = "Bearer";
+                options.DefaultChallengeScheme = "Bearer";
+            })
+            .AddJwtBearer("Bearer", options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    RoleClaimType = ClaimTypes.Role,
+                    NameClaimType = ClaimTypes.Name,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                };
             });
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -38,13 +58,12 @@ namespace APIGateway
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("AllowAllOrigins");
-
+            app.UseCors("AllowAll");
+            app.UseAuthentication();
             app.UseAuthorization();
 
-
             app.MapControllers();
-            
+
             await app.UseOcelot();
 
             app.Run();
