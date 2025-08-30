@@ -3,6 +3,7 @@ using CatalogService.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace CatalogService
 {
@@ -11,6 +12,11 @@ namespace CatalogService
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .CreateLogger();
+            builder.Host.UseSerilog();
             builder.Services.AddHostedService<PaymentProcessedConsumer>();
             builder.Services.AddDbContext<CatalogServiceContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("CatalogServiceContext") ?? throw new InvalidOperationException("Connection string 'CatalogServiceContext' not found.")));
