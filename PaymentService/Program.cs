@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PaymentService.Consumers;
 using PaymentService.Data;
+using Serilog;
 
 namespace PaymentService
 {
@@ -10,6 +11,13 @@ namespace PaymentService
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .CreateLogger();
+            builder.Host.UseSerilog();
+
+
             builder.Services.AddDbContext<PaymentServiceContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("PaymentServiceContext") 
                         ?? throw new InvalidOperationException("Connection string 'PaymentServiceContext' not found.")));
