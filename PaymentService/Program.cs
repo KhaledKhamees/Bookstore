@@ -41,7 +41,8 @@ namespace PaymentService
 
 
             var app = builder.Build();
-
+            // Use Serilog request logging for HTTP requests and responses time measurement
+            app.UseSerilogRequestLogging();
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

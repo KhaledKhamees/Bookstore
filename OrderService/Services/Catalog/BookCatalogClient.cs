@@ -13,7 +13,6 @@ namespace OrderService.Services.Catalog
             _logger = logger;
             if (_httpClient.Timeout == Timeout.InfiniteTimeSpan)
             {
-                _logger.LogWarning("HttpClient timeout is set to infinite. Setting it to 5 seconds.");
                 _httpClient.Timeout = TimeSpan.FromSeconds(5);
             }
                 
