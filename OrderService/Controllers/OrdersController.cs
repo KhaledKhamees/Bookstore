@@ -22,14 +22,15 @@ namespace OrderService.Controllers
     {
         private readonly OrderServiceContext _context;
         private readonly IBookCatalogClient _clint;
-        private readonly ILogger<OrdersController> _log;
+        private readonly ILogger<OrdersController> _logger;
         private readonly IRabbitMQProducer _rabbitMQProducer;
+
 
         public OrdersController(OrderServiceContext context,IBookCatalogClient client, ILogger<OrdersController> log, IRabbitMQProducer rabbitMQProducer)
         {
             _context = context;
             _clint = client;
-            _log = log;
+            _logger = log;
             _rabbitMQProducer = rabbitMQProducer;
         }
         [Authorize(Roles = "Admin")]
@@ -37,6 +38,7 @@ namespace OrderService.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Order>>> GetOrder()
         {
+            _logger.LogInformation("Getting all orders");
             return await _context.Order.ToListAsync();
         }
         [Authorize(Roles = "Admin")]

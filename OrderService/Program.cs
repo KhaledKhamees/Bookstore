@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using OrderService.Data;
 using OrderService.Services.Catalog;
 using OrderService.Services.RabbitMQ;
+using Serilog;
+using Serilog.Sinks.Elasticsearch;
+
 
 namespace OrderService
 {
@@ -11,24 +14,57 @@ namespace OrderService
     {
         public static void Main(string[] args)
         {
+            #region OldLogging
+            // Configure Serilog
+            //Log.Logger = new LoggerConfiguration()
+            //    .MinimumLevel.Information()
+            //    .Enrich.FromLogContext()
+            //    .WriteTo.Console()
+            //    .WriteTo.Seq("http://localhost:5341") 
+            //    .CreateLogger();
+
+            //Log.Logger = new LoggerConfiguration()
+            //    .Enrich.FromLogContext()
+            //    .Enrich.WithProperty("ServiceName", "OrderService") // Change per service
+            //    .WriteTo.Console()
+            //    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
+            //    {
+            //        AutoRegisterTemplate = true,
+            //        IndexFormat = "orderservice-logs-{0:yyyy.MM.dd}"
+            //    })
+            //    .CreateLogger();
+            #endregion
+            // Create WebApplication builder
             var builder = WebApplication.CreateBuilder(args);
+            // Configure Serilog from appsettings.json
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .CreateLogger();
+
+            // Configure DbContext with SQL Server
             builder.Services.AddDbContext<OrderServiceContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("OrderServiceContext") ?? throw new InvalidOperationException("Connection string 'OrderServiceContext' not found.")));
-
+            // Use Serilog for logging
+            builder.Host.UseSerilog();
             // Add services to the container.
-
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
+            // Add Swagger generation
             builder.Services.AddSwaggerGen();
+            // Configure HTTP client for BookCatalog service
             var bookCatalogUrl = builder.Configuration["ServiceUrls:Catalog"]
                 ?? throw new InvalidOperationException("Book Catalog Url not found.");
+            // Register services
             builder.Services.AddHttpClient<IBookCatalogClient, BookCatalogClient>(client =>
             {
                 client.BaseAddress = new Uri(bookCatalogUrl);
                 client.Timeout = TimeSpan.FromSeconds(5);
             });
+            // Register RabbitMQ producer as a singleton
             builder.Services.AddSingleton<IRabbitMQProducer, RabbitMQProducer>();
+            // Configure JWT authentication
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     .AddJwtBearer(options =>
                     {
@@ -43,7 +79,7 @@ namespace OrderService
                             IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                         };
                     });
-
+            // Build the application
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
