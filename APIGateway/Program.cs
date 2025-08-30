@@ -3,6 +3,8 @@ using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using System.Security.Claims;
 using System.Text;
+using Serilog;
+using Serilog.Sinks.Seq;
 
 namespace APIGateway
 {
@@ -11,6 +13,11 @@ namespace APIGateway
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .Enrich.FromLogContext()
+                .CreateLogger();
+            builder.Host.UseSerilog();
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
