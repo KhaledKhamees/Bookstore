@@ -1,10 +1,14 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrderService.Data;
 using OrderService.Services.Catalog;
 using OrderService.Services.RabbitMQ;
 using Prometheus;
+using RabbitMQ.Client;
 using Serilog;
 using Serilog.Sinks.Elasticsearch;
 
@@ -80,6 +84,30 @@ namespace OrderService
                             IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
                         };
                     });
+            builder.Services.AddHealthChecks()
+                    .AddSqlServer(
+                        builder.Configuration.GetConnectionString("OrderServiceContext"),
+                        healthQuery: "SELECT 1;",
+                        name: "sqlserver",
+                        tags: new[] { "db", "sql", "sqlserver" }
+                    ).AddRabbitMQ(
+                        name: "rabbitmq",
+                        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+                        tags: new[] { "mq", "rabbitmq" },
+                        factory: sp =>
+                        {
+                            var factory = new RabbitMQ.Client.ConnectionFactory()
+                            {
+                                HostName = builder.Configuration["RabbitMQ:Host"],
+                                Port = int.Parse(builder.Configuration["RabbitMQ:Port"]),
+                                UserName = builder.Configuration["RabbitMQ:Username"],
+                                Password = builder.Configuration["RabbitMQ:Password"],
+                            };
+                            return factory.CreateConnectionAsync();
+                        }
+                    )
+                    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
+
             // Build the application
             var app = builder.Build();
             // Use Serilog request logging for HTTP requests and responses time measurement
@@ -103,6 +131,14 @@ namespace OrderService
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/health", new HealthCheckOptions
+                {
+                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                });
+            });
 
 
             app.MapControllers();
