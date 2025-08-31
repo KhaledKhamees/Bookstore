@@ -1,3 +1,5 @@
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PaymentService.Consumers;
@@ -39,6 +41,29 @@ namespace PaymentService
                           .AllowAnyHeader();
                 });
             });
+            builder.Services.AddHealthChecks()
+                    .AddSqlServer(
+                        builder.Configuration.GetConnectionString("PaymentServiceContext"),
+                        healthQuery: "SELECT 1;",
+                        name: "sqlserver",
+                        tags: new[] { "db", "sql", "sqlserver" }
+                    ).AddRabbitMQ(
+                        name: "rabbitmq",
+                        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+                        tags: new[] { "mq", "rabbitmq" },
+                        factory: sp =>
+                        {
+                            var factory = new RabbitMQ.Client.ConnectionFactory()
+                            {
+                                HostName = builder.Configuration["RabbitMQ:Host"],
+                                Port = int.Parse(builder.Configuration["RabbitMQ:Port"]),
+                                UserName = builder.Configuration["RabbitMQ:Username"],
+                                Password = builder.Configuration["RabbitMQ:Password"],
+                            };
+                            return factory.CreateConnectionAsync();
+                        }
+                    )
+                    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
 
 
             var app = builder.Build();
@@ -62,6 +87,15 @@ namespace PaymentService
 
             app.UseHttpsRedirection();
             app.UseCors("AllowAll");
+            app.UseRouting();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/health", new HealthCheckOptions
+                {
+                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                });
+            });
 
             app.UseAuthorization();
             app.MapGet("/", () => "Payment Service Running...");
