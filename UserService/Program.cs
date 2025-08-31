@@ -1,7 +1,9 @@
-
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Prometheus;
 using Serilog;
 using UserService.Data;
@@ -28,6 +30,18 @@ namespace UserService
             builder.Services.AddSwaggerGen();
             builder.Services.AddDbContext<UserDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            builder.Services.AddHealthChecks()
+                .AddSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnection"),
+                    healthQuery: "SELECT 1;", // Simple query to check database connectivity
+                    name: "sqlserver",
+                    failureStatus: HealthStatus.Unhealthy,
+                    tags: new[] { "db", "sql", "sqlserver" }
+                )
+                .AddCheck("self", () => HealthCheckResult.Healthy());
+
+
             builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<UserDbContext>()
                 .AddDefaultTokenProviders();
@@ -56,11 +70,20 @@ namespace UserService
                 });
             });
 
+            builder.Services.AddHealthChecksUI(options =>
+            {
+                options.SetEvaluationTimeInSeconds(10); // time in seconds between check
+                options.MaximumHistoryEntriesPerEndpoint(60); // maximum history of checks
+                options.SetApiMaxActiveRequests(1); // api requests concurrency
+                options.AddHealthCheckEndpoint("UserService", "/health"); // map health check endpoint
+            }).AddInMemoryStorage(); 
+
             var app = builder.Build();
-            // Use Serilog request logging for HTTP requests and responses time measurement
+
             app.UseSerilogRequestLogging();
 
             app.UseRouting();
+
             app.UseMetricServer();
             app.UseHttpMetrics();
 
@@ -82,6 +105,15 @@ namespace UserService
             app.UseAuthentication();
             app.UseAuthorization();
 
+            // Health Checks endpoints
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/health", new HealthCheckOptions
+                {
+                    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+                });
+                endpoints.MapHealthChecksUI(options => options.UIPath = "/health-ui");
+            });
 
             app.MapControllers();
 
