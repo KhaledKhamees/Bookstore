@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using PaymentService.Consumers;
 using PaymentService.Data;
+using Prometheus;
 using Serilog;
 
 namespace PaymentService
@@ -43,6 +44,15 @@ namespace PaymentService
             var app = builder.Build();
             // Use Serilog request logging for HTTP requests and responses time measurement
             app.UseSerilogRequestLogging();
+
+            app.UseRouting();
+            app.UseMetricServer();
+            app.UseHttpMetrics();
+            app.UseHttpMetrics(options =>
+            {
+                options.AddCustomLabel("app", _ => "PaymentService");
+            });
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

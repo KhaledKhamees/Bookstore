@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 using Serilog;
 using UserService.Data;
 using UserService.Models;
@@ -58,12 +59,23 @@ namespace UserService
             var app = builder.Build();
             // Use Serilog request logging for HTTP requests and responses time measurement
             app.UseSerilogRequestLogging();
+
+            app.UseRouting();
+            app.UseMetricServer();
+            app.UseHttpMetrics();
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            app.UseHttpMetrics(options =>
+            {
+                options.AddCustomLabel("app", _ => "UserService");
+            });
+
             app.UseCors("AllowAll");
 
             app.UseHttpsRedirection();

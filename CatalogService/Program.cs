@@ -3,6 +3,7 @@ using CatalogService.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Prometheus;
 using Serilog;
 
 namespace CatalogService
@@ -55,6 +56,15 @@ namespace CatalogService
             var app = builder.Build();
             // Use Serilog request logging for HTTP requests and responses time measurement
             app.UseSerilogRequestLogging();
+
+            app.UseRouting();
+            app.UseMetricServer();
+            app.UseHttpMetrics();
+            app.UseHttpMetrics(options =>
+            {
+                options.AddCustomLabel("app", _ => "UserService");
+            });
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
