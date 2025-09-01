@@ -1,0 +1,122 @@
+﻿version: "3.9"
+
+services:
+  # ========================
+  # Catalog Service
+  # ========================
+  catalogservice:
+    build: ./CatalogService
+    container_name: catalog_service
+    ports:
+      - "5001:80"   # Host → Container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mssql;Database=CatalogDb;User Id=sa;Password=YourStrong!Passw0rd;
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - mssql
+      - rabbitmq
+    networks:
+      - appnetwork
+
+  # ========================
+  # Order Service
+  # ========================
+  orderservice:
+    build: ./OrderService
+    container_name: order_service
+    ports:
+      - "5002:80"   # Host → Container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mssql;Database=OrderDb;User Id=sa;Password=YourStrong!Passw0rd;
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - mssql
+      - rabbitmq
+    networks:
+      - appnetwork
+
+  # ========================
+  # Payment Service
+  # ========================
+  paymentservice:
+    build: ./PaymentService
+    container_name: payment_service
+    ports:
+      - "5003:80"   # Host → Container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mssql;Database=PaymentDb;User Id=sa;Password=YourStrong!Passw0rd;
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - mssql
+      - rabbitmq
+    networks:
+      - appnetwork
+
+  # ========================
+  # User Service
+  # ========================
+  userservice:
+    build: ./UserService
+    container_name: user_service
+    ports:
+      - "5004:80"   # Host → Container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mssql;Database=UserServiceDb;User Id=sa;Password=YourStrong!Passw0rd;
+      - RabbitMQ__HostName=rabbitmq
+    depends_on:
+      - mssql
+      - rabbitmq
+    networks:
+      - appnetwork
+
+  # ========================
+  # API Gateway
+  # ========================
+  apigateway:
+    build: ./ApiGateway
+    container_name: api_gateway
+    ports:
+      - "5000:80"   # Host → Container
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      - catalogservice
+      - orderservice
+      - paymentservice
+      - userservice
+    networks:
+      - appnetwork
+
+  # ========================
+  # SQL Server
+  # ========================
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql_server
+    ports:
+      - "1433:1433" # Host → Container
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong!Passw0rd
+    networks:
+      - appnetwork
+
+  # ========================
+  # RabbitMQ
+  # ========================
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_broker
+    ports:
+      - "5672:5672"   # For communication
+      - "15672:15672" # For RabbitMQ Management UI
+    networks:
+      - appnetwork
+
+networks:
+  appnetwork:
+    driver: bridge
